@@ -107,7 +107,13 @@ function GenerateRunOulineForMatchingCore() {
 
 		document.getElementById("RunOutput").innerHTML = "";
 		for (let i = 0; i < runs.length - 1; i++ ) {
-			document.getElementById("RunOutput").innerHTML += "Run " + runs[i] + " completions of spire " + (i+1) + "<br>";
+			document.getElementById("RunOutput").innerHTML += "Run " + runs[i] + " completion(s) of spire ";
+			for (let j = 0; j<i; j++) {
+				document.getElementById("RunOutput").innerHTML += (j+1) + " + ";
+			} 
+			document.getElementById("RunOutput").innerHTML += (i+1);
+			
+			document.getElementById("RunOutput").innerHTML += "<br>";
 		}
 		document.getElementById("RunOutput").innerHTML += "Then you will be on track to earn the following core:";
 
