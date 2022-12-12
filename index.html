@@ -5,12 +5,30 @@
 	<title>Core Searcher (5.8.0)</title>
 </head>
 <body>
-<p> Core Finder </p>
+<h2> Core Finder </h2>
 
 <p> This is designed to help you find better spire Cores </p>
-<p> Currently it only lists the next 10 cores</p>
-<p> This assumes you simply make repeated runs to the spire to select and then stop. If you run fewer or more spires in a run it will change the RNG and invalidate these results.</p>
-<p> This also assumes that you will earn no additional spire cores after loading save before starting your next run. Earning more cores will invalidate results</p>
+
+<h3>How to use:</h3>
+
+<p>Export save from trimps and paste it in the import save box.<br>
+If you simply want to see what cores will be coming up next, select the spire you will repeatedly clear and click Search for Cores.<br>
+If you wish to limit this list based on required mods, select the "Require certain mods" checkbox and fill in the details. If you enter impossible details, it won't find any.<br>
+It will only scan a maximum of 100 runs ahead because if you need more than that you're probably asking for too much</p>
+
+<p>If you wish to engage in RNG seed shenanigans to get a better core earlier (currently hard coded for spire 7/eth cores, dropdown isn't used):<br>
+    Import save.<br>
+    Select Require certain mods and select the min values you want on your core<br>
+    Click "Check RNG seed shenanigans"<br>
+    Results will tell you how many runs of lower spires you'd need to complete in order for your seed to line up with the seed needed to generate the core you desire
+</p>
+
+<h3>Things to note:</h3>
+
+<p> This tool assumes that your save is either from the start of a run (pre-spire 1) or you will portal before earning another spire core.<br>
+    If you earn another spire core before starting a fresh run or you're currently in the middle of a run, the results are meaningless.<br>
+    This tool also assume that you will run repeated runs to the spire you select. ie, if you select Spire 4, it assumes that you will only be earning cores by clearing spire 1-4 in runs and will not have any runs in which you fail to clear spire 4 or that you clear spire 5<br>
+    If you don't do runs like this, results become invalid</p>
 	
 <span>  
 	Import save: <input type="text" id="saveInput" title="Paste save here"/><br>
@@ -25,10 +43,21 @@
 			<option value="7">Spire VII (z800) - Ethereal</option>
 		</select><br>
 	
-	<input type="checkbox" id="onlyShowPerfectCores" title="If selected, this will only show cores with 4/4 mods">Only 4/4 cores</input><br>
-	<button type="button" id="coreSearchButton" title="Search for cores">
-							Search for cores</button>
+	<!--<input type="checkbox" id="onlyShowPerfectCores" title="If selected, this will only show cores with 4/4 mods">Only 4/4 cores</input><br>-->
+	
+	<input type="checkbox" id="filterCores" />Require certain mods<br> 
+	<span id="modifiers" title=""></span>
+	<br>
+	
+	<button type="button" id="coreSearchButton" title="Load the next 10 cores. If required box is checked, will only return matching cores">
+							Search for cores</button><br><br>
+							
+	<button type="button" id="runFinderButton" title="Check if you can juice the seed running lower spires to get a matching core">
+		Check RNG seed shenanigans</button><br><br>
 </span>
+    <span id="RunOutput">
+        
+    </span>
 	<div class="flex-container"> 
 		<script>
             for (var i = 0; i <5; i++) {

@@ -3,14 +3,35 @@ var save;
 var spireIncrements = [ 8, 9, 10, 10, 10, 11, 11 ]
 var spireCumulativeIncrements = [ 8, 17, 27, 37, 47, 58, 69 ]
 var spireToClear = 0;
+var requiredMods = [];
+var maxZone;
+var filter;
 
 document.getElementById("saveInput").addEventListener("paste", (event) => {
 	onSavePaste(event);
 });
 
 document.getElementById("coreSearchButton").addEventListener("click", (event) => {
-	generateNext10Cores(spireToClear, !!document.getElementById("onlyShowPerfectCores").checked);
+	generateNext10Cores(spireToClear, !!document.getElementById("filterCores").checked);
 });
+
+document.getElementById("filterCores").addEventListener("change", (event) => {
+	showFilter(event);	
+});
+
+document.getElementById("runFinderButton").addEventListener("click", (event) => {
+	GenerateRunOulineForMatchingCore();
+});
+
+function showFilter(event) {
+	filter = !!document.getElementById("filterCores").checked
+	if (filter) {
+		buildModsChecksAndTexts();
+		document.getElementById("modifiers").removeAttribute("hidden")
+	} else {
+		document.getElementById("modifiers").setAttribute("hidden", true)
+	}
+}
 
 function setSpireToClear(value) {
 	spireToClear = value;
@@ -26,11 +47,89 @@ function onSavePaste(event) {
 	game.stats.totalHeirlooms.value = 1
 }
 
-function generateNext10Cores(spire, onlyShowPerfect) {
+function buildRequiredMods() {
+	requiredMods = [];
+	
+	let type = "Core"
+	let eligible = [];
+	let ele;
+	let ele2;
+	for (let item in game.heirlooms[type]){
+		eligible.push(item);
+	}
+	
+	//Check each to see if they're checked
+	
+	for (let i = 0; i < eligible.length; i++){
+		ele = document.getElementById("checkbox" + i);
+		ele2 = document.getElementById("requiredValue" + i);
+		if (ele.checked && ele2.value > 0) {
+			requiredMods.push([ele.value, ele2.value]);
+		}
+	}
+	
+}
+
+function buildModsChecksAndTexts() {
+	
+	//get list of eligible mods
+	let type = "Core"
+	let eligible = [];
+	for (let item in game.heirlooms[type]){
+		eligible.push(item);
+	}	
+	
+	let ele = document.getElementById("modifiers")
+	ele.innerHTML = ""
+	for (let i = 0; i < eligible.length; i++){
+		ele.innerHTML += '<input type="checkbox" id=checkbox' + i + ' value="' + eligible[i] + '">' + eligible[i] +'&nbsp;' + '<input type="text" id=requiredValue' + i + '>' + '&nbsp;'
+		
+	}
+}
+
+function GenerateRunOulineForMatchingCore() {
+
+	document.getElementById("RunOutput").innerHTML = "";
+
+	game.global.coreSeed = save.global.coreSeed;
+
+	clearCoreDisplay();
+
+	let runs = findRunsForNextGoodCore();
+
+	if (runs.length == 0) {
+		//Couldn't find any
+		document.getElementById("RunOutput").innerHTML = "Could not find any matching cores within 10000 seeds (~144 spire 7 clears). Try different required mods.";
+	} else {
+		let core = game.global.heirloomsExtra[game.global.heirloomsExtra.length-1];
+		game.global.heirloomsExtra = [];
+		//This is the core that will return, put it in slot 1
+
+		document.getElementById("RunOutput").innerHTML = "";
+		for (let i = 0; i < runs.length - 1; i++ ) {
+			document.getElementById("RunOutput").innerHTML += "Run " + runs[i] + " completions of spire " + (i+1) + "<br>";
+		}
+		document.getElementById("RunOutput").innerHTML += "Then you will be on track to earn the following core:";
+
+		document.getElementById('core0').innerText += (runs[runs.length - 1] + 1) + " ahead" + "\n" + coreToString(core);
+	}
+	
+}
+
+function clearCoreDisplay() {
+	document.getElementById("RunOutput").innerHTML = "";
+	for (let i = 0; i<10; i++) {
+		document.getElementById('core'+i).innerText = "";
+	}
+}
+
+function generateNext10Cores(spire, requireMods) {
 	//Spire is passed as the int value of the spire to be cleared
 	
 	//Set the seed from the save so if the user presses the button a bunch of times it still generates the right cores
 	game.global.coreSeed = save.global.coreSeed;
+
+	clearCoreDisplay();
 	
 	let core;
 	let numAhead = 0;
@@ -38,25 +137,29 @@ function generateNext10Cores(spire, onlyShowPerfect) {
 	let display = true;
 	let keepSearching = true;
 	
+	if (requireMods) {
+		buildRequiredMods();
+	}
+	
 	
 	while (keepSearching) {
 		//If clearing above spire I need to increment the seed for the previous spires cleared before this one each running
 		//Easier to just up the seed than actually generate and throw out the cores.
 		
-		//game.global.coreSeed += spireCumulativeIncrements[spire-1];
-		
-		console.log(game.global.coreSeed);
-		
-		for (let j = 1; j < spire; j++) {
-			//console.log("generating core for spire " + j);
-			createHeirloom(j*100 + 100, false, true);
+		if (spire > 1) {
+			game.global.coreSeed += spireCumulativeIncrements[spire-2];
 		}
+		
+		//for (let j = 1; j < spire; j++) {
+			//console.log("generating core for spire " + j);
+			//createHeirloom(j*100 + 100, false, true);
+		//}
 		
 		createHeirloom(spire*100 + 100, false, true);
 		core = game.global.heirloomsExtra[game.global.heirloomsExtra.length-1];
 		
-		if (onlyShowPerfect) {
-			display = isCorePerfect(core);
+		if (requireMods) {
+			display = shouldKeepCore(core);
 		} else {
 			display = true;
 		}
@@ -68,9 +171,11 @@ function generateNext10Cores(spire, onlyShowPerfect) {
 		
 		numAhead++;
 		
-		if (!onlyShowPerfect && numAhead >= 10) {
+		if (!requireMods && numAhead >= 10) {
 			keepSearching = false;
-		} else if (onlyShowPerfect && numFound >= 10) {
+		} else if (requireMods && numFound >= 10) {
+			keepSearching = false;
+		} else if (numAhead >= 100) {
 			keepSearching = false;
 		}
 		
@@ -78,6 +183,32 @@ function generateNext10Cores(spire, onlyShowPerfect) {
 	
 	game.global.heirloomsExtra = [];
 		
+}
+
+function shouldKeepCore(core) {
+	let keep = true;
+	
+	let match = false;
+	
+	for (let i = 0; i < requiredMods.length; i++) {
+		//Verify each required mod is present to the required level
+		match = false;
+		for (let j = 0; j < core.mods.length; j++){
+			if (core.mods[j][0] == requiredMods[i][0]) {
+				if (core.mods[j][1] >= requiredMods[i][1]) {
+					match = true;
+					break;
+				}
+			}
+		}
+		
+		if (!match) { 
+			keep = false;
+			break;
+		}
+	}
+	
+	return keep;
 }
 
 function isCorePerfect(core) {
@@ -112,7 +243,168 @@ function coreToString(core){
 	return text
 }
 
+function findRunsForNextGoodCore() {
+	let nextSeedOffset = getSeedOffsetNeeded(save.global.coreSeed, 7);
+	
+	if (nextSeedOffset == -1) {
+		return [];
+	}
 
+	let runs = getRunsNeededToMatchSeed(nextSeedOffset);
+	
+	while (runs.length == 0 && nextSeedOffset < 10000) {
+		nextSeedOffset = getSeedOffsetNeeded(save.global.coreSeed + nextSeedOffset + 1, 7);
+
+		if (nextSeedOffset == -1) {
+			runs = [];
+			break;
+		}
+
+		runs = getRunsNeededToMatchSeed(nextSeedOffset);
+	}
+
+	return runs;
+	
+}
+
+function getRunsNeededToMatchSeed(newSeedOffset) {
+	//There is 100% a good way to solve this.
+	//This isn't it
+	
+	//May need to limit this, but the break when this would take us past the seed below should prevent insane calculations..
+	let maxRuns = 100;
+	
+	if (newSeedOffset % spireCumulativeIncrements[6] == 0) {
+		//We're on the path if we portal now
+		return [ 0,0,0,0,0,0, newSeedOffset /  spireCumulativeIncrements[6]];
+	}
+	
+	let runCounts = [];
+	let tmpValue = 0
+	
+	for (let i = 0; i < maxRuns; i++) {
+		
+		if ((spireCumulativeIncrements[0] * i) > newSeedOffset) {
+			//We can't fit in this many runs, so break out
+			break;
+		}
+		
+		for (let j = 0; j < maxRuns; j++) {
+			
+			if (((spireCumulativeIncrements[0] * i)
+				+ (spireCumulativeIncrements[1] * j))
+				> newSeedOffset)
+			{
+				break;
+			}
+			
+			for (let k = 0; k < maxRuns; k++) {
+				
+				if (((spireCumulativeIncrements[0] * i)
+					+ (spireCumulativeIncrements[1] * j)
+					+ (spireCumulativeIncrements[2] * k))
+					> newSeedOffset)
+				{
+					break;
+				}
+				
+				for (let l=0; l < maxRuns; l++) {
+					
+					if (((spireCumulativeIncrements[0] * i)
+						+ (spireCumulativeIncrements[1] * j)
+						+ (spireCumulativeIncrements[2] * k)
+						+ (spireCumulativeIncrements[3] * l))
+						> newSeedOffset)
+					{
+						break;
+					}
+					
+					for (let m=0; m < maxRuns; m++) { 
+					
+						if (((spireCumulativeIncrements[0] * i)
+							+ (spireCumulativeIncrements[1] * j)
+							+ (spireCumulativeIncrements[2] * k)
+							+ (spireCumulativeIncrements[3] * l)
+							+ (spireCumulativeIncrements[4] * m))
+							> newSeedOffset)
+						{
+							break;
+						}
+					
+						for (let n=0; n < maxRuns; n++) {
+							
+							if (((spireCumulativeIncrements[0] * i)
+								+ (spireCumulativeIncrements[1] * j)
+								+ (spireCumulativeIncrements[2] * k)
+								+ (spireCumulativeIncrements[3] * l)
+								+ (spireCumulativeIncrements[4] * m)
+								+ (spireCumulativeIncrements[5] * n))
+								> newSeedOffset)
+							{
+								break;
+							}
+							
+							
+							tmpValue = newSeedOffset
+								- (spireCumulativeIncrements[0] * i) 
+								- (spireCumulativeIncrements[1] * j) 
+								- (spireCumulativeIncrements[2] * k) 
+								- (spireCumulativeIncrements[3] * l) 
+								- (spireCumulativeIncrements[4] * m) 
+								- (spireCumulativeIncrements[5] * n);
+							if (tmpValue % spireCumulativeIncrements[6] == 0)
+							{
+								return [ i, j, k, l, m, n, tmpValue / spireCumulativeIncrements[6] ];
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return [];
+}
+
+function getSeedOffsetNeeded(baseSeed, spire) {
+	let nextSeed = getSeedOfNextMatchingCore(baseSeed, spire);
+
+	//Means we can't find one
+	if (nextSeed == -1) 
+		return -1;
+	
+	return nextSeed - save.global.coreSeed - spireCumulativeIncrements[5];
+}
+
+function getSeedOfNextMatchingCore(currentSeed, spire) {
+	//check when the next heirloom would be get generated.
+	
+	buildRequiredMods();
+	
+	let goodSeed = -1;
+	
+	//Start checking at next possible seed
+	let startingSeed = currentSeed + spireCumulativeIncrements[5];
+	
+	//Check each seed for the next 10000 (~144 full runs)
+	for (let i = startingSeed; i < startingSeed + 10000; i++) {
+		game.global.coreSeed = i;	
+		createHeirloom(spire*100 + 100, false, true);
+		core = game.global.heirloomsExtra[game.global.heirloomsExtra.length-1];
+		
+		if (shouldKeepCore(core)) {
+			//console.log(coreToString(core));
+			goodSeed = i;
+			break;
+		}
+		game.global.heirloomsExtra = [];
+		
+	}
+	
+	
+	return goodSeed;
+	
+}
 
 //Functions taken from trimps.github.io main.js on 12/11/2022
 
