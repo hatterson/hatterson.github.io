@@ -1,1 +1,51 @@
-This is hatterson.github.io
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="styles.css">
+	<title>Core Searcher (5.8.0)</title>
+</head>
+<body>
+<p> Core Finder </p>
+
+<p> This is designed to help you find better spire Cores </p>
+<p> Currently it only lists the next 10 cores</p>
+<p> This assumes you simply make repeated runs to the spire to select and then stop. If you run fewer or more spires in a run it will change the RNG and invalidate these results.</p>
+<p> This also assumes that you will earn no additional spire cores after loading save before starting your next run. Earning more cores will invalidate results</p>
+	
+<span>  
+	Import save: <input type="text" id="saveInput" title="Paste save here"/><br>
+	<label for="spireChoice">Spire you wish to clear/rarity to earn</label>
+		<select name="spire" id="spireChoice" title="You must complete the spire to earn the core" onchange="setSpireToClear(this.value);">
+			<option value="1">Spire I (z200) - Common</option>
+			<option value="2">Spire II (z300) - Uncommon</option>
+			<option value="3">Spire III (z400) - Rare</option>
+			<option value="4">Spire IV (z500) - Epic</option>
+			<option value="5">Spire V (z600) - Legendary</option>
+			<option value="6">Spire VI (z700) - Magnificent</option>
+			<option value="7">Spire VII (z800) - Ethereal</option>
+		</select><br>
+	
+	<input type="checkbox" id="onlyShowPerfectCores" title="If selected, this will only show cores with 4/4 mods">Only 4/4 cores</input><br>
+	<button type="button" id="coreSearchButton" title="Search for cores">
+							Search for cores</button>
+</span>
+	<div class="flex-container"> 
+		<script>
+            for (var i = 0; i <5; i++) {
+				document.write('<p id ="core' + i +'" ></p>');
+            }
+		</script> 
+	</div>
+	<div class="flex-container"> 
+		<script>
+            for (var i = 5; i <10; i++) {
+				document.write('<p id ="core' + i +'" ></p>');
+            }
+		</script> 
+	</div>
+</body>
+    <script src="lz-string.js"></script>
+	<script src="config.js"></script>
+	<script src="coreSearch.js"></script>
+	
+</html>
