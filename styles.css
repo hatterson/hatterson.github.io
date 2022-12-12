@@ -1,0 +1,9 @@
+.flex-container {
+  display: flex;
+}
+
+.flex-container > p {
+  margin: 30px;
+  padding: 20px;
+  font-size: 20px;
+}
