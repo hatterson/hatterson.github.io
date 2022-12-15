@@ -284,83 +284,91 @@ function getRunsNeededToMatchSeed(newSeedOffset) {
 		//We're on the path if we portal now
 		return [ 0,0,0,0,0,0, newSeedOffset /  spireCumulativeIncrements[6]];
 	}
-	
-	let runCounts = [];
-	let tmpValue = 0
-	
-	for (let i = 0; i < maxRuns; i++) {
+
+	//Maximize the number of spire 7 runs. To do this we'll start with the mod of the new seed against a full run and see if
+	//we can match that. If we can't, we slowly add in one copy of a full run until we can get a result
+
+	for (let stepNum = Math.floor(newSeedOffset / spireCumulativeIncrements[6]); stepNum > 0; stepNum-- ) {
 		
-		if ((spireCumulativeIncrements[0] * i) > newSeedOffset) {
-			//We can't fit in this many runs, so break out
-			break;
-		}
+		let tmpSeedOffest = newSeedOffset - spireCumulativeIncrements[6] * stepNum;
+
+		let runCounts = [];
+		let tmpValue = 0
+	
+		for (let i = 0; i < maxRuns; i++) {
 		
-		for (let j = 0; j < maxRuns; j++) {
-			
-			if (((spireCumulativeIncrements[0] * i)
-				+ (spireCumulativeIncrements[1] * j))
-				> newSeedOffset)
-			{
+			if ((spireCumulativeIncrements[0] * i) > tmpSeedOffest) {
+				//We can't fit in this many runs, so break out
 				break;
 			}
+		
+			for (let j = 0; j < maxRuns; j++) {
 			
-			for (let k = 0; k < maxRuns; k++) {
-				
 				if (((spireCumulativeIncrements[0] * i)
-					+ (spireCumulativeIncrements[1] * j)
-					+ (spireCumulativeIncrements[2] * k))
-					> newSeedOffset)
+					+ (spireCumulativeIncrements[1] * j))
+					> tmpSeedOffest)
 				{
 					break;
 				}
+			
+				for (let k = 0; k < maxRuns; k++) {
 				
-				for (let l=0; l < maxRuns; l++) {
-					
 					if (((spireCumulativeIncrements[0] * i)
 						+ (spireCumulativeIncrements[1] * j)
-						+ (spireCumulativeIncrements[2] * k)
-						+ (spireCumulativeIncrements[3] * l))
-						> newSeedOffset)
+						+ (spireCumulativeIncrements[2] * k))
+						> tmpSeedOffest)
 					{
 						break;
 					}
-					
-					for (let m=0; m < maxRuns; m++) { 
+				
+					for (let l=0; l < maxRuns; l++) {
 					
 						if (((spireCumulativeIncrements[0] * i)
 							+ (spireCumulativeIncrements[1] * j)
 							+ (spireCumulativeIncrements[2] * k)
-							+ (spireCumulativeIncrements[3] * l)
-							+ (spireCumulativeIncrements[4] * m))
-							> newSeedOffset)
+							+ (spireCumulativeIncrements[3] * l))
+							> tmpSeedOffest)
 						{
 							break;
 						}
 					
-						for (let n=0; n < maxRuns; n++) {
-							
+						for (let m=0; m < maxRuns; m++) { 
+					
 							if (((spireCumulativeIncrements[0] * i)
 								+ (spireCumulativeIncrements[1] * j)
 								+ (spireCumulativeIncrements[2] * k)
 								+ (spireCumulativeIncrements[3] * l)
-								+ (spireCumulativeIncrements[4] * m)
-								+ (spireCumulativeIncrements[5] * n))
-								> newSeedOffset)
+								+ (spireCumulativeIncrements[4] * m))
+								> tmpSeedOffest)
 							{
 								break;
 							}
+					
+							for (let n=0; n < maxRuns; n++) {
+							
+								if (((spireCumulativeIncrements[0] * i)
+									+ (spireCumulativeIncrements[1] * j)
+									+ (spireCumulativeIncrements[2] * k)
+									+ (spireCumulativeIncrements[3] * l)
+									+ (spireCumulativeIncrements[4] * m)
+									+ (spireCumulativeIncrements[5] * n))
+									> tmpSeedOffest)
+								{
+									break;
+								}
 							
 							
-							tmpValue = newSeedOffset
-								- (spireCumulativeIncrements[0] * i) 
-								- (spireCumulativeIncrements[1] * j) 
-								- (spireCumulativeIncrements[2] * k) 
-								- (spireCumulativeIncrements[3] * l) 
-								- (spireCumulativeIncrements[4] * m) 
-								- (spireCumulativeIncrements[5] * n);
-							if (tmpValue % spireCumulativeIncrements[6] == 0)
-							{
-								return [ i, j, k, l, m, n, tmpValue / spireCumulativeIncrements[6] ];
+								tmpValue = tmpSeedOffest
+									- (spireCumulativeIncrements[0] * i) 
+									- (spireCumulativeIncrements[1] * j) 
+									- (spireCumulativeIncrements[2] * k) 
+									- (spireCumulativeIncrements[3] * l) 
+									- (spireCumulativeIncrements[4] * m) 
+									- (spireCumulativeIncrements[5] * n);
+								if (tmpValue % spireCumulativeIncrements[6] == 0)
+								{
+									return [ i, j, k, l, m, n, stepNum ];
+								}
 							}
 						}
 					}
